@@ -26,7 +26,7 @@ Built with **Neo-Brutalism** principles:
 *   **API Engine:** Powered by the open-source Cobalt API.
 
 ## 📂 PROJECT STRUCTURE
-
+```text
 ├── api/
 │   └── snatch.js    # The serverless "engine" that talks to the API
 ├── index.html       # The skeletal structure

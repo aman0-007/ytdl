@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1 class="title">SNATCHER</h1>
+        </header>
+
+        <section class="card">
+            <div id="urlDisplay" class="url-display">DETECTING VIDEO...</div>
+
+            <div class="options-group">
+                <label class="radio-btn">
+                    <input type="radio" name="format" value="video" checked>
+                    <span class="custom-radio">VIDEO</span>
+                </label>
+                <label class="radio-btn">
+                    <input type="radio" name="format" value="audio">
+                    <span class="custom-radio">AUDIO</span>
+                </label>
+            </div>
+
+            <div id="qualityGroup" class="quality-selector hidden">
+                <p>QUALITIES:</p>
+                <div id="dynamicQualityGrid" class="quality-grid"></div>
+            </div>
+
+            <button id="downloadBtn" class="brutal-btn" disabled>WAITING...</button>
+        </section>
+
+        <div id="statusArea" class="status-box hidden"></div>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>

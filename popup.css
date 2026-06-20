@@ -1,0 +1,65 @@
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Space Grotesk', sans-serif; }
+body { background-color: #f4f0ea; color: #111; width: 350px; padding: 15px; }
+
+.container { display: flex; flex-direction: column; gap: 15px; }
+header { text-align: center; margin-bottom: -5px; }
+.title { font-size: 2.5rem; font-weight: 900; letter-spacing: -2px; text-shadow: 3px 3px 0px #ffeb3b, 6px 6px 0px #111; margin-bottom: 5px; }
+
+.card { background: #fff; border: 3px solid #111; padding: 15px; box-shadow: 6px 6px 0px #111; display: flex; flex-direction: column; gap: 15px; }
+
+.url-display { background: #111; color: #ffeb3b; padding: 8px; font-size: 0.8rem; font-weight: 700; text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; border: 2px solid #111; }
+
+.options-group { display: flex; gap: 10px; }
+.radio-btn { flex: 1; cursor: pointer; }
+.radio-btn input { display: none; }
+.custom-radio { display: block; text-align: center; padding: 8px; font-weight: 700; border: 3px solid #111; background: #fff; transition: all 0.1s ease; font-size: 0.9rem; }
+.radio-btn input:checked + .custom-radio { background: #ffeb3b; box-shadow: 3px 3px 0px #111; transform: translate(-2px, -2px); }
+
+.brutal-btn { width: 100%; padding: 12px; font-size: 1.2rem; font-weight: 900; color: #fff; background: #ff4757; border: 3px solid #111; cursor: pointer; box-shadow: 4px 4px 0px #111; transition: all 0.1s ease; }
+.brutal-btn:hover:not(:disabled) { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px #111; }
+.brutal-btn:active:not(:disabled) { transform: translate(4px, 4px); box-shadow: 0px 0px 0px #111; }
+.brutal-btn:disabled { background: #ccc; cursor: not-allowed; box-shadow: none; transform: none; }
+
+/* popup.css (Replace the bottom section with this) */
+
+.quality-selector { 
+    border: 3px solid #111; 
+    padding: 10px; 
+    background: #eee; 
+    
+    /* NEW: Smooth sliding animation properties */
+    overflow: hidden;
+    max-height: 500px; /* High enough to fit the grid */
+    opacity: 1;
+    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.quality-selector p { font-weight: 900; font-size: 0.8rem; margin-bottom: 8px; text-align: center; }
+.quality-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.quality-grid .custom-radio { padding: 5px; font-size: 0.8rem; }
+
+/* NEW: Smooth Status Area Transitions */
+.status-box { 
+    background: #ffeb3b; 
+    border: 3px solid #111; 
+    padding: 15px; 
+    text-align: center; 
+    font-weight: 700; 
+    box-shadow: 4px 4px 0px #111; 
+    font-size: 0.9rem; 
+    
+    overflow: hidden;
+    max-height: 100px;
+    opacity: 1;
+    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* THE FIX: We no longer use display: none. We crush the height to 0! */
+.hidden { 
+    max-height: 0px !important;
+    opacity: 0 !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+    margin: 0px !important;
+    border-width: 0px 3px !important; /* Hides top/bottom borders */
+}

@@ -1,7 +1,7 @@
-# Use a lightweight Linux version of Node.js
-FROM node:20-bullseye-slim
+# Use 'bookworm' (Debian 12) which comes with Python 3.11 natively
+FROM node:20-bookworm-slim
 
-# Install FFmpeg and Python (yt-dlp needs Python to run perfectly)
+# Install FFmpeg and Python 3.11
 RUN apt-get update && apt-get install -y \
     python3 \
     ffmpeg \

@@ -7,6 +7,7 @@ const dynamicQualityGrid = document.getElementById('dynamicQualityGrid');
 const formatRadios = document.querySelectorAll('input[name="format"]');
 
 const BACKEND_URL = "http://127.0.0.1:8080";
+// const BACKEND_URL = window.location.origin;
 let activeVideoUrl = "";
 let activeVideoTitle = "Raw_Video";
 

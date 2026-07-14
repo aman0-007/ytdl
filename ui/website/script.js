@@ -5,7 +5,7 @@ const qualityGroup = document.getElementById('qualityGroup');
 const dynamicQualityGrid = document.getElementById('dynamicQualityGrid');
 const formatRadios = document.querySelectorAll('input[name="format"]');
 
-const BACKEND_URL = "http://localhost:8080";
+const BACKEND_URL = window.location.origin;
 
 // Dynamic Quality Fetcher
 let fetchTimeout;

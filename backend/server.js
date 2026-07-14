@@ -148,6 +148,7 @@ app.get('/download', (req, res) => {
 });
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
+const HOST = '0.0.0.0';
+app.listen(PORT, HOST, () => {
     console.log(`🔥 RAW ENGINE online on port ${PORT}`);
 });

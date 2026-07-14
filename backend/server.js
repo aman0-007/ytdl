@@ -7,8 +7,15 @@ const os = require('os');
 const crypto = require('crypto'); // Built-in node module to generate random IDs
 
 const app = express();
+
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Private-Network', 'true');
+    next();
+});
+
 app.use(cors({ origin: '*' }));
 app.use(express.json());
+app.use(express.static(path.join(__dirname, '../')));
 
 // In-memory "database" to track download progress
 const jobs = {}; 
@@ -39,13 +46,19 @@ app.get('/info', async (req, res) => {
 
 // --- NEW: START DOWNLOAD ---
 app.get('/start-snatch', (req, res) => {
-    const { url, format, quality } = req.query;
+    const { url, format, quality, title } = req.query;
     if (!url) return res.status(400).send('No URL provided');
 
     // Create a unique Job ID
     const jobId = crypto.randomBytes(8).toString('hex');
     const isAudio = format === 'audio';
     const ext = isAudio ? 'mp3' : 'mp4';
+
+    let safeTitle = title ? title.replace(/[\\/:*?"<>|]/g, '').trim() : 'Raw_Download';
+    
+    let finalFileName = isAudio 
+        ? `${safeTitle}_Audio.mp3` 
+        : `${safeTitle}_${quality === 'max' ? 'MAX' : quality + 'p'}.mp4`;
     
     const tempFileName = `raw-${jobId}.${ext}`;
     const tempFilePath = path.join(os.tmpdir(), tempFileName);
@@ -55,7 +68,7 @@ app.get('/start-snatch', (req, res) => {
         status: 'starting', 
         progress: '0', 
         file: tempFilePath,
-        fileName: tempFileName
+        fileName: finalFileName
     };
 
     // Respond to the frontend immediately with the Job ID

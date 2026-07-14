@@ -5,7 +5,7 @@ const qualityGroup = document.getElementById('qualityGroup');
 const dynamicQualityGrid = document.getElementById('dynamicQualityGrid');
 const formatRadios = document.querySelectorAll('input[name="format"]');
 
-const BACKEND_URL = "https://ytdl-1vxw.onrender.com";
+const BACKEND_URL = "http://localhost:8080";
 
 // Dynamic Quality Fetcher
 let fetchTimeout;

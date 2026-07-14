@@ -6,8 +6,9 @@ const qualityGroup = document.getElementById('qualityGroup');
 const dynamicQualityGrid = document.getElementById('dynamicQualityGrid');
 const formatRadios = document.querySelectorAll('input[name="format"]');
 
-const BACKEND_URL = "http://localhost:8080";
+const BACKEND_URL = "http://127.0.0.1:8080";
 let activeVideoUrl = "";
+let activeVideoTitle = "Raw_Video";
 
 // 1. SMART URL DETECTION (Handles both Toolbar click AND Floating Button click)
 const urlParams = new URLSearchParams(window.location.search);
@@ -37,13 +38,30 @@ function initSnatcher(currentUrl) {
 }
 
 // 2. Fetch Qualities from Backend
+function proxyFetch(url, options = {}) {
+    return new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage({ action: 'PROXY_FETCH', url, options }, (response) => {
+            if (chrome.runtime.lastError) {
+                return reject(new Error(chrome.runtime.lastError.message));
+            }
+            if (response && response.success) {
+                resolve(response.data);
+            } else {
+                reject(new Error(response ? response.error : 'Unknown error'));
+            }
+        });
+    });
+}
+
 async function fetchQualities(url) {
     showStatus('SCANNING VIDEO...', '#ffeb3b', '#111');
     try {
-        const response = await fetch(`${BACKEND_URL}/info?url=${encodeURIComponent(url)}`);
-        const data = await response.json();
+        const targetUrl = `${BACKEND_URL}/info?url=${encodeURIComponent(url)}`;
+        const data = await proxyFetch(targetUrl);
 
         if (data.qualities && data.qualities.length > 0) {
+            activeVideoTitle = data.title;
+            dynamicQualityGrid.innerHTML = ''; // Clear prior entries safely
             data.qualities.forEach((q, index) => {
                 if (![144, 240, 360, 480, 720, 1080, 1440, 2160].includes(q)) return;
                 const isChecked = q === 720 || index === data.qualities.length - 1 ? 'checked' : '';
@@ -74,6 +92,7 @@ async function fetchQualities(url) {
     }
 }
 
+
 // 3. UI Toggles
 formatRadios.forEach(radio => {
     radio.addEventListener('change', (e) => {
@@ -85,7 +104,7 @@ formatRadios.forEach(radio => {
     });
 });
 
-// 4. Polling Download Logic
+// 4. Polling Download Logic via Proxy Bridge (Fault-Tolerant)
 downloadBtn.addEventListener('click', async () => {
     if (!activeVideoUrl) return;
 
@@ -98,36 +117,53 @@ downloadBtn.addEventListener('click', async () => {
     downloadBtn.disabled = true;
 
     try {
-        const startRes = await fetch(`${BACKEND_URL}/start-snatch?url=${encodeURIComponent(activeVideoUrl)}&format=${format}&quality=${quality}`);
-        const startData = await startRes.json();
+        const startUrl = `${BACKEND_URL}/start-snatch?url=${encodeURIComponent(activeVideoUrl)}&format=${format}&quality=${quality}&title=${encodeURIComponent(activeVideoTitle)}`;
+        const startData = await proxyFetch(startUrl);
         const jobId = startData.jobId;
 
+        let errorCount = 0; // Tracks consecutive dropped pings
+
         const checkInterval = setInterval(async () => {
-            const statusRes = await fetch(`${BACKEND_URL}/status?jobId=${jobId}`);
-            const statusData = await statusRes.json();
+            try {
+                const statusUrl = `${BACKEND_URL}/status?jobId=${jobId}`;
+                const statusData = await proxyFetch(statusUrl);
 
-            if (statusData.status === 'downloading') {
-                showStatus(`PULLING DATA: ${statusData.progress}%`, '#ffeb3b', '#111');
-            } 
-            else if (statusData.status === 'converting' || statusData.status === 'merging') {
-                showStatus(`STITCHING FILE... DON'T CLOSE POPUP`, '#ffeb3b', '#111');
-            }
-            else if (statusData.status === 'done') {
-                clearInterval(checkInterval);
-                showStatus('DOWNLOADING TO BROWSER...', '#00e676', '#111');
+                // If successful, reset the error tracker
+                errorCount = 0;
+
+                if (statusData.status === 'downloading') {
+                    showStatus(`PULLING DATA: ${statusData.progress}%`, '#ffeb3b', '#111');
+                } 
+                else if (statusData.status === 'converting' || statusData.status === 'merging') {
+                    showStatus(`STITCHING FILE... DON'T CLOSE`, '#ffeb3b', '#111');
+                }
+                else if (statusData.status === 'done') {
+                    clearInterval(checkInterval);
+                    showStatus('DOWNLOADING TO BROWSER...', '#00e676', '#111');
+                    
+                    chrome.runtime.sendMessage({
+                        action: 'TRIGGER_DOWNLOAD',
+                        url: `${BACKEND_URL}/download?jobId=${jobId}`
+                    });
+
+                    downloadBtn.innerText = "SNATCH IT";
+                    downloadBtn.disabled = false;
+                }
+                else if (statusData.status === 'error') {
+                    clearInterval(checkInterval);
+                    showStatus('SERVER ERROR.', '#ff4757', '#fff');
+                    downloadBtn.disabled = false;
+                }
+            } catch (statusErr) {
+                console.warn('Dropped a ping, retrying...', statusErr);
+                errorCount++;
                 
-                // Chrome Native Download API
-                chrome.downloads.download({
-                    url: `${BACKEND_URL}/download?jobId=${jobId}`
-                });
-
-                downloadBtn.innerText = "SNATCH IT";
-                downloadBtn.disabled = false;
-            }
-            else if (statusData.status === 'error') {
-                clearInterval(checkInterval);
-                showStatus('SERVER ERROR.', '#ff4757', '#fff');
-                downloadBtn.disabled = false;
+                // Only kill the UI if it fails 10 seconds in a row
+                if (errorCount >= 10) {
+                    clearInterval(checkInterval);
+                    showStatus('LOST CONNECTION TO ENGINE.', '#ff4757', '#fff');
+                    downloadBtn.disabled = false;
+                }
             }
         }, 1000);
 
@@ -136,6 +172,7 @@ downloadBtn.addEventListener('click', async () => {
         downloadBtn.disabled = false;
     }
 });
+
 
 function showStatus(message, bgColor, textColor) {
     statusArea.innerHTML = message;

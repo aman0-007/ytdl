@@ -17,14 +17,19 @@ Built with strict **Neo-Brutalism** design principles:
 
 ## 🚀 THE ECOSYSTEM
 
-### 1. Web Application (`index.html`)
-The core browser terminal interface. Paste any link, dynamically scan server capabilities, select configurations, and dispatch tasks straight to your local engine.
+### 1. Website UI
+The main browser-based downloader interface lives in [ui/website](ui/website). It provides the full standalone web experience.
 
-### 2. Cross-Browser Extension View (`popup.html`)
-A fully isolated Manifest V3 desktop utility compatible with both Google Chrome and Mozilla Firefox. Automatically auto-grabs your browser's active tab URL to speed up workflow without copy-pasting.
+### 2. Extension UI
+The browser extension UI lives in [ui/extension](ui/extension). This includes the popup interface, the YouTube floating button injection, and the extension manifest.
 
-### 3. Floating YouTube Shortcut Injection (`content.js`)
-An embedded micro-widget injected seamlessly onto the YouTube video page. Tapping the brutalist favicon badge smoothly handles elastic micro-animations to slide open an isolated, completely sandboxed iframe overlay.
+### 3. Backend
+The backend server lives in [backend](backend) and handles download jobs, info requests, and file delivery.
+
+### Project Structure
+- [ui/website](ui/website) — standalone website UI
+- [ui/extension](ui/extension) — Chrome/Firefox extension UI and content script
+- [backend](backend) — server-side logic and Node.js runtime
 
 ---
 

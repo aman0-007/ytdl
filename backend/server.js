@@ -4,7 +4,7 @@ const youtubedl = require('youtube-dl-exec');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const crypto = require('crypto'); // Built-in node module to generate random IDs
+const crypto = require('crypto');
 
 const app = express();
 
@@ -17,11 +17,9 @@ app.use(cors({ origin: '*' }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../')));
 
-// In-memory "database" to track download progress
 const jobs = {}; 
 
 app.get('/info', async (req, res) => {
-    // ... (Keep your existing /info code exactly the same here) ...
     const url = req.query.url;
     if (!url) return res.status(400).json({ error: 'No URL provided' });
 
@@ -44,26 +42,23 @@ app.get('/info', async (req, res) => {
     }
 });
 
-// --- NEW: START DOWNLOAD ---
 app.get('/start-snatch', (req, res) => {
     const { url, format, quality, title } = req.query;
     if (!url) return res.status(400).send('No URL provided');
 
-    // Create a unique Job ID
     const jobId = crypto.randomBytes(8).toString('hex');
     const isAudio = format === 'audio';
     const ext = isAudio ? 'mp3' : 'mp4';
 
-    let safeTitle = title ? title.replace(/[\\/:*?"<>|]/g, '').trim() : 'Raw_Download';
+    let safeTitle = title ? title.replace(/[\\/:*?"<>|]/g, '').trim() : 'video';
     
     let finalFileName = isAudio 
-        ? `${safeTitle}_Audio.mp3` 
-        : `${safeTitle}_${quality === 'max' ? 'MAX' : quality + 'p'}.mp4`;
+        ? `${safeTitle}.mp3` 
+        : `${safeTitle}_${quality}.mp4`;
     
     const tempFileName = `raw-${jobId}.${ext}`;
     const tempFilePath = path.join(os.tmpdir(), tempFileName);
 
-    // Initialize the job state
     jobs[jobId] = { 
         status: 'starting', 
         progress: '0', 
@@ -71,7 +66,6 @@ app.get('/start-snatch', (req, res) => {
         fileName: finalFileName
     };
 
-    // Respond to the frontend immediately with the Job ID
     res.json({ jobId });
 
     const dlOptions = {
@@ -80,6 +74,10 @@ app.get('/start-snatch', (req, res) => {
         noCallHome: true,
         noCheckCertificate: true,
         youtubeSkipDashManifest: true,
+        concurrentFragments: 5,
+        downloader: 'aria2c',
+        downloaderArgs: 'aria2c:-x 16 -s 16 -k 1M',
+        forceIpv4: true
     };
 
     if (isAudio) {
@@ -87,26 +85,23 @@ app.get('/start-snatch', (req, res) => {
         dlOptions.extractAudio = true;
         dlOptions.audioFormat = 'mp3';
     } else {
-        dlOptions.format = `bestvideo[height<=${quality === 'max' ? 2160 : quality}]+bestaudio/best`;
+        dlOptions.format = `bestvideo[height<=${quality}]+bestaudio/best`;
         dlOptions.mergeOutputFormat = 'mp4';
     }
 
     const subprocess = youtubedl.exec(url, dlOptions);
 
-    // --- PROGRESS TRACKING MAGIC ---
-    // yt-dlp outputs its progress to stdout. We read that data stream to find the percentage.
     subprocess.stdout.on('data', (data) => {
         const output = data.toString();
-        // Regex to find things like "[download]  45.3%"
         const match = output.match(/\[download\]\s+([\d\.]+)%/);
         
         if (match) {
             jobs[jobId].status = 'downloading';
-            jobs[jobId].progress = match[1]; // The number (e.g., "45.3")
+            jobs[jobId].progress = match[1];
         } else if (output.includes('Destination:') && output.includes('.mp3')) {
-            jobs[jobId].status = 'converting'; // MP3 FFmpeg conversion taking place
+            jobs[jobId].status = 'converting';
         } else if (output.includes('Merging formats')) {
-            jobs[jobId].status = 'merging'; // 4K FFmpeg merge taking place
+            jobs[jobId].status = 'merging';
         }
     });
 
@@ -122,16 +117,13 @@ app.get('/start-snatch', (req, res) => {
     });
 });
 
-// --- NEW: CHECK STATUS ---
 app.get('/status', (req, res) => {
     const jobId = req.query.jobId;
     if (!jobs[jobId]) return res.status(404).json({ error: 'Job not found' });
     
-    // Send the current progress back to the browser
     res.json(jobs[jobId]);
 });
 
-// --- NEW: FINALLY DOWNLOAD THE FILE ---
 app.get('/download', (req, res) => {
     const jobId = req.query.jobId;
     const job = jobs[jobId];
@@ -141,7 +133,6 @@ app.get('/download', (req, res) => {
     }
 
     res.download(job.file, job.fileName, (err) => {
-        // Cleanup: Delete the file and the job from memory after sending
         if (fs.existsSync(job.file)) fs.unlinkSync(job.file);
         delete jobs[jobId];
     });

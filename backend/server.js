@@ -85,7 +85,12 @@ app.get('/start-snatch', (req, res) => {
         dlOptions.extractAudio = true;
         dlOptions.audioFormat = 'mp3';
     } else {
-        dlOptions.format = `bestvideo[height<=${quality}]+bestaudio/best`;
+        const qNum = parseInt(quality);
+        if (qNum <= 720) {
+            dlOptions.format = `best[height<=${qNum}][ext=mp4]/bestvideo[height<=${qNum}]+bestaudio/best`;
+        } else {
+            dlOptions.format = `bestvideo[height<=${qNum}]+bestaudio/best`;
+        }
         dlOptions.mergeOutputFormat = 'mp4';
     }
 

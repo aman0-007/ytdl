@@ -9,6 +9,7 @@ const BACKEND_URL = window.location.origin;
 
 // Dynamic Quality Fetcher
 let fetchTimeout;
+let currentVideoTitle = '';
 videoUrlInput.addEventListener('input', () => {
     const url = videoUrlInput.value.trim();
     
@@ -25,6 +26,7 @@ videoUrlInput.addEventListener('input', () => {
             const response = await fetch(`${BACKEND_URL}/info?url=${encodeURIComponent(url)}`);
             const data = await response.json();
 
+            currentVideoTitle = data.title;
             if (data.qualities && data.qualities.length > 0) {
                 data.qualities.forEach((q, index) => {
                     // ADDED 144 AND 240 HERE
@@ -40,14 +42,6 @@ videoUrlInput.addEventListener('input', () => {
                         </label>
                     `;
                 });
-                
-                dynamicQualityGrid.innerHTML += `
-                    <label class="radio-btn">
-                        <input type="radio" name="quality" value="max">
-                        <span class="custom-radio">MAX</span>
-                    </label>
-                `;
-
                 const currentFormat = document.querySelector('input[name="format"]:checked').value;
                 if (currentFormat === 'video') qualityGroup.classList.remove('hidden');
                 
@@ -87,7 +81,7 @@ downloadBtn.addEventListener('click', async () => {
 
     try {
         // 1. Tell the server to start the download and get a Job ID
-        const startResponse = await fetch(`${BACKEND_URL}/start-snatch?url=${encodeURIComponent(url)}&format=${format}&quality=${quality}`);
+        const startResponse = await fetch(`${BACKEND_URL}/start-snatch?url=${encodeURIComponent(url)}&format=${format}&quality=${quality}&title=${encodeURIComponent(currentVideoTitle)}`);
         const startData = await startResponse.json();
         const jobId = startData.jobId;
 
